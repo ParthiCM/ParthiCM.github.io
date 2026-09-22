@@ -1,0 +1,79 @@
+/* ============================================================
+   MISSION CONTROL — design tokens
+   Single-theme by design: this is a darkened flight deck, not a
+   page with a dark mode. Every colour is painted explicitly so
+   the page never borrows a ground from its host.
+   Spec: docs/01-DESIGN-SYSTEM.md
+   ============================================================ */
+
+:root {
+  /* ---- Surfaces, darkest to lightest ---- */
+  --void:   #050607;
+  --deck:   #0A0D10;
+  --panel:  #101519;
+  --raised: #181F25;
+
+  /* ---- Structure ---- */
+  --grid:    #1A2228;
+  --grid-hi: #2B363F;
+
+  /* ---- Text ----
+     Measured against --void (#050607). WCAG AA wants 4.5:1 for text
+     below ~18.66px, and every mono label on this site is smaller than
+     that. The original --dim (#56626E) came in at 3.25:1 and read as
+     mud on the dark ground; --grid-hi was being used as text at 1.64:1,
+     which was simply unreadable. Both are now above the floor, with the
+     step between --muted and --dim preserved so the hierarchy survives. */
+  --text:  #E6EDF3;   /* 17.16:1 */
+  --muted: #A3AEB9;   /*  8.99:1 */
+  --dim:   #7B8792;   /*  5.53:1 */
+
+  /* ---- Signal ----
+     --signal is the ONLY interactive colour. If it's cyan, it does
+     something. --pass and --fail are semantic, never decorative:
+     they appear on node pulses, build chips and form validation. */
+  --signal: #00D4FF;
+  --pass:   #3DDC97;
+  --fail:   #FF5C5C;
+  --warn:   #FFB020;
+
+  --signal-soft: rgba(0, 212, 255, 0.12);
+  --warn-soft:   rgba(255, 176, 32, 0.5);
+
+  /* ---- Type ---- */
+  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-serif:   'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Fluid scale */
+  --step--1: clamp(0.7rem, 0.662rem + 0.17vw, 0.78rem);
+  --step-0:  clamp(1rem, 0.95rem + 0.24vw, 1.13rem);
+  --step-1:  clamp(1.02rem, 0.93rem + 0.4vw, 1.28rem);
+  --step-2:  clamp(1.35rem, 1.22rem + 0.62vw, 1.85rem);
+  --step-3:  clamp(1.7rem, 1.46rem + 1.05vw, 2.5rem);
+  --step-4:  clamp(2.1rem, 1.7rem + 1.8vw, 3.4rem);
+  --step-5:  clamp(1.85rem, 1.02rem + 3.9vw, 4.55rem);
+
+  /* ---- Space ---- */
+  --gutter:  clamp(1rem, 4vw, 4.5rem);
+  --section: clamp(5rem, 12vh, 9rem);
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-io: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ---- Layout ---- */
+  --max: 1440px;
+  --radius: 2px;
+}
+
+/* Honour a stated preference for more contrast by lifting the two
+   quiet text tones and thickening the structural rules. */
+@media (prefers-contrast: more) {
+  :root {
+    --muted: #D2DAE1;
+    --dim: #B0BAC4;
+    --grid: #3A4751;
+    --grid-hi: #566670;
+  }
+}

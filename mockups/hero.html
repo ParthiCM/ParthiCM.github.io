@@ -1,0 +1,1152 @@
+<title>Mission Control Hero</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,300..700&family=JetBrains+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400..600&display=swap">
+
+<style>
+/* ============================================================
+   MISSION CONTROL — hero mockup
+   Portfolio for Parthiban Murugan · parthicm.github.io
+   Single-theme by design: this is a darkened flight deck.
+   ============================================================ */
+
+:root{
+  /* Surfaces */
+  --void:    #050607;
+  --deck:    #0A0D10;
+  --panel:   #101519;
+  --raised:  #181F25;
+
+  /* Structure */
+  --grid:    #1A2228;
+  --grid-hi: #2B363F;
+
+  /* Text */
+  --text:    #E6EDF3;
+  --muted:   #8B98A5;
+  --dim:     #56626E;
+
+  /* Signal */
+  --signal:  #00D4FF;
+  --pass:    #3DDC97;
+  --fail:    #FF5C5C;
+  --warn:    #FFB020;
+
+  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-serif: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+
+  --gutter: clamp(1rem, 4vw, 4.5rem);
+  --ease: cubic-bezier(.16, 1, .3, 1);
+}
+
+*, *::before, *::after{ box-sizing: border-box; }
+
+html, body{ height: 100%; }
+
+body{
+  margin: 0;
+  background: var(--void);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-variation-settings: 'wdth' 100, 'wght' 400;
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body.is-ready{ cursor: none; }
+@media (pointer: coarse){ body.is-ready{ cursor: auto; } }
+
+.app{
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* ---------- WebGL ---------- */
+#gl{
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 0;
+}
+
+/* Fallback ground if WebGL is unavailable */
+.glfallback{
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(120% 80% at 62% 42%, rgba(0,212,255,.10), transparent 60%),
+    radial-gradient(90% 70% at 20% 80%, rgba(61,220,151,.05), transparent 65%),
+    var(--void);
+}
+
+/* ---------- Film effects ---------- */
+.fx-vignette{
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  background: radial-gradient(118% 88% at 50% 46%, transparent 38%, rgba(0,0,0,.42) 78%, rgba(0,0,0,.78) 100%);
+  transition: opacity .45s ease;
+}
+.fx-grain{
+  position: absolute; inset: -120px; z-index: 3; pointer-events: none;
+  opacity: .055;
+  animation: grain 1s steps(6) infinite;
+  transition: opacity .45s ease;
+}
+@keyframes grain{
+  0%   { transform: translate(0,0); }
+  16%  { transform: translate(-14px, 8px); }
+  33%  { transform: translate(9px, -13px); }
+  50%  { transform: translate(-11px, -6px); }
+  66%  { transform: translate(13px, 11px); }
+  83%  { transform: translate(-7px, 14px); }
+  100% { transform: translate(0,0); }
+}
+.fx-off{ opacity: 0 !important; }
+
+/* ---------- Letterbox ---------- */
+.bar{
+  position: absolute; left: 0; right: 0; z-index: 6;
+  height: 50%;
+  background: var(--void);
+  pointer-events: none;
+  transition: height 1.15s var(--ease);
+}
+.bar--t{ top: 0; }
+.bar--b{ bottom: 0; }
+.is-open .bar{ height: 0; }
+.is-open.is-cine .bar{ height: 11.5%; }
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding-block: clamp(1rem, 2.6vh, 1.75rem);
+  padding-inline: var(--gutter);
+  padding-top: calc(clamp(1rem, 2.6vh, 1.75rem) + env(safe-area-inset-top, 0px));
+  font-family: var(--font-mono);
+  font-size: .688rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.brand{ color: var(--text); display: flex; align-items: center; gap: .6rem; }
+.brand b{ font-weight: 500; letter-spacing: .16em; }
+.lamps{ display: inline-flex; gap: .3rem; }
+.lamp{ width: 5px; height: 5px; border-radius: 50%; background: var(--grid-hi); }
+.lamp.on{ background: var(--pass); box-shadow: 0 0 8px rgba(61,220,151,.7); }
+.coords{ display: flex; gap: 1.25rem; text-align: right; }
+.coords span{ white-space: nowrap; }
+.coords .clk{ color: var(--signal); font-variant-numeric: tabular-nums; }
+@media (max-width: 720px){ .coords .geo{ display: none; } }
+
+/* ---------- Hero ---------- */
+.hero{
+  position: relative; z-index: 5;
+  height: 100%;
+  display: flex; flex-direction: column; justify-content: center;
+  padding-inline: var(--gutter);
+  padding-block: clamp(5rem, 14vh, 8rem);
+  max-width: 1440px;
+  margin-inline: auto;
+}
+.hero__inner{ max-width: 56rem; }
+
+/* Eyebrow: the job title is content, not instrumentation — so it leaves the
+   mono telemetry layer and the cyan signal (which is reserved for things you
+   can click) and sits in Archivo, larger, with its own internal hierarchy. */
+.eyebrow{
+  font-family: var(--font-display);
+  font-variation-settings: 'wdth' 104, 'wght' 500;
+  font-size: clamp(.82rem, .75rem + .32vw, .98rem);
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0 0 clamp(1rem, 2.4vh, 1.6rem);
+  display: flex; align-items: center; gap: .72rem;
+  flex-wrap: wrap;
+  line-height: 1.3;
+}
+.eyebrow::before{
+  content: ""; width: clamp(18px, 4vw, 44px); height: 1px;
+  background: var(--grid-hi); flex: none;
+}
+.eyebrow__meta{
+  font-variation-settings: 'wdth' 104, 'wght' 400;
+  color: var(--dim);
+  display: inline-flex; align-items: center; gap: .72rem;
+}
+.eyebrow__meta::before{
+  content: ""; width: 1px; height: .78em; background: var(--grid-hi); flex: none;
+}
+
+/* --- Amber variant -------------------------------------------------
+   The eyebrow takes the amber, so the availability chip has to give it
+   up: two amber elements stacked would read as one system and the
+   "available for work" signal would stop being a signal. The chip goes
+   to pass-green, which is the same "good state" the field already
+   pulses. Cyan stays untouched — it is still only for things you click. */
+.eb-amber .eyebrow{ color: var(--warn); }
+.eb-amber .eyebrow::before{ background: rgba(255,176,32,.5); }
+.eb-amber .eyebrow__meta{ color: rgba(255,176,32,.52); }
+.eb-amber .eyebrow__meta::before{ background: rgba(255,176,32,.3); }
+
+.eb-amber .chip{ color: var(--pass); }
+.eb-amber .dot{ background: var(--pass); animation-name: pingPass; }
+@keyframes pingPass{
+  0%   { box-shadow: 0 0 0 0 rgba(61,220,151,.5); }
+  70%  { box-shadow: 0 0 0 9px rgba(61,220,151,0); }
+  100% { box-shadow: 0 0 0 0 rgba(61,220,151,0); }
+}
+
+h1{
+  margin: 0;
+  font-size: clamp(1.85rem, 1.02rem + 3.9vw, 4.55rem);
+  line-height: 1.02;
+  letter-spacing: -.028em;
+  font-variation-settings: 'wdth' 115, 'wght' 600;
+  text-wrap: balance;
+}
+.line{
+  display: block;
+  overflow: hidden;
+  padding-block-end: .1em;
+  margin-block-end: -.1em;
+}
+.line__in{ display: block; }
+.line--soft{ color: var(--muted); }
+
+/* --- Sub-heading: three voices to compare ---------------------------
+   SERIF  the human voice in a machine environment. Contrasts hardest
+          with the industrial H1 and signals someone who writes.
+   MONO   terminal output. Most on-concept, but monospace measurably
+          slows reading and this is the densest text on the page.
+   SANS   Archivo, same family as the H1. Safest, least distinctive. */
+.sub{
+  margin: clamp(1.1rem, 2.8vh, 1.9rem) 0 0;
+  color: var(--muted);
+}
+
+.sub-sans .sub{
+  font-family: var(--font-display);
+  font-variation-settings: 'wdth' 100, 'wght' 400;
+  font-size: clamp(.95rem, .89rem + .28vw, 1.125rem);
+  line-height: 1.62;
+  max-width: 44rem;
+}
+.sub-sans .sub b{ color: var(--text); font-variation-settings: 'wdth' 100, 'wght' 500; }
+
+.sub-serif .sub{
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-size: clamp(1.02rem, .93rem + .4vw, 1.28rem);
+  line-height: 1.56;
+  max-width: 40rem;
+}
+.sub-serif .sub b{ color: var(--text); font-weight: 600; }
+
+.sub-mono .sub{
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: clamp(.79rem, .745rem + .2vw, .9rem);
+  line-height: 1.78;
+  letter-spacing: -.004em;
+  max-width: 37rem;
+  border-left: 1px solid var(--grid);
+  padding-left: clamp(.85rem, 2vw, 1.15rem);
+}
+.sub-mono .sub b{ color: var(--text); font-weight: 500; }
+
+/* ---------- Stat readout ---------- */
+.stats{
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--grid);
+  border: 1px solid var(--grid);
+  margin-top: clamp(1.5rem, 3.6vh, 2.5rem);
+  max-width: 44rem;
+}
+.stat{
+  background: rgba(10,13,16,.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: clamp(.7rem, 1.7vh, 1rem) clamp(.7rem, 1.5vw, 1.1rem);
+}
+.stat__v{
+  font-family: var(--font-mono);
+  font-size: clamp(1.15rem, .99rem + .56vw, 1.58rem);
+  font-weight: 500;
+  color: var(--text);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+/* Labels were 0.625rem in --dim: about 3.4:1 on this ground, which fails
+   AA for small text. Bigger size + --muted takes it to roughly 7.4:1. */
+.stat__l{
+  font-family: var(--font-mono);
+  font-size: clamp(.7rem, .662rem + .17vw, .78rem);
+  letter-spacing: .105em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-top: .42rem;
+  line-height: 1.35;
+}
+@media (max-width: 620px){
+  .stats{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ---------- Actions ---------- */
+.actions{
+  display: flex; flex-wrap: wrap; gap: .75rem;
+  margin-top: clamp(1.4rem, 3.4vh, 2.25rem);
+}
+.btn{
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: .688rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  padding: .85rem 1.4rem;
+  border: 1px solid var(--grid-hi);
+  background: rgba(16,21,25,.6);
+  color: var(--text);
+  text-decoration: none;
+  overflow: hidden;
+  transition: color .3s ease, border-color .3s ease;
+  cursor: pointer;
+}
+.btn span{ position: relative; z-index: 1; }
+.btn::after{
+  content: ""; position: absolute; inset: 0;
+  background: var(--signal);
+  transform: scaleX(0); transform-origin: left;
+  transition: transform .42s var(--ease);
+}
+.btn:hover, .btn:focus-visible{ border-color: var(--signal); }
+.btn:hover::after, .btn:focus-visible::after{ transform: scaleX(1); }
+.btn:hover span, .btn:focus-visible span{ color: var(--void); }
+.btn--primary{ border-color: var(--signal); color: var(--signal); }
+.btn:focus-visible{ outline: 2px solid var(--signal); outline-offset: 3px; }
+
+/* ---------- Availability ---------- */
+.chip{
+  display: inline-flex; align-items: center; gap: .55rem;
+  margin-top: clamp(1.1rem, 2.6vh, 1.6rem);
+  font-family: var(--font-mono);
+  font-size: .625rem;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: var(--warn);
+}
+.dot{
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--warn);
+  box-shadow: 0 0 0 0 rgba(255,176,32,.55);
+  animation: ping 2.4s ease-out infinite;
+  flex: none;
+}
+@keyframes ping{
+  0%   { box-shadow: 0 0 0 0 rgba(255,176,32,.5); }
+  70%  { box-shadow: 0 0 0 9px rgba(255,176,32,0); }
+  100% { box-shadow: 0 0 0 0 rgba(255,176,32,0); }
+}
+
+/* ---------- Scroll cue ---------- */
+.cue{
+  position: absolute; z-index: 5;
+  left: var(--gutter);
+  bottom: calc(clamp(1.1rem, 3vh, 2rem) + env(safe-area-inset-bottom, 0px));
+  display: flex; align-items: center; gap: .7rem;
+  font-family: var(--font-mono);
+  font-size: .625rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.cue__rail{
+  position: relative; width: 52px; height: 1px; background: var(--grid-hi);
+  overflow: hidden;
+}
+.cue__rail::after{
+  content: ""; position: absolute; inset: 0;
+  background: var(--signal);
+  transform: translateX(-100%);
+  animation: sweep 2.6s var(--ease) infinite;
+}
+@keyframes sweep{
+  0%   { transform: translateX(-100%); }
+  55%  { transform: translateX(0); }
+  100% { transform: translateX(100%); }
+}
+
+/* ---------- Reveal ---------- */
+.rv{ opacity: 0; transform: translateY(14px); }
+.line__in{ transform: translateY(108%); }
+.is-open .rv{
+  opacity: 1; transform: none;
+  transition: opacity .8s var(--ease), transform .8s var(--ease);
+}
+.is-open .line__in{
+  transform: none;
+  transition: transform 1.05s var(--ease);
+}
+.is-open .d1 .line__in{ transition-delay: .06s; }
+.is-open .d2 .line__in{ transition-delay: .17s; }
+.is-open .d3 .line__in{ transition-delay: .28s; }
+.is-open .eyebrow{ transition-delay: .02s; }
+.is-open .sub{ transition-delay: .48s; }
+.is-open .stats{ transition-delay: .60s; }
+.is-open .actions{ transition-delay: .72s; }
+.is-open .chip{ transition-delay: .82s; }
+.is-open .cue{ transition-delay: .92s; }
+
+/* ---------- Preloader ---------- */
+.preload{
+  position: absolute; inset: 0; z-index: 20;
+  display: grid; place-items: center;
+  background: var(--void);
+  padding-inline: var(--gutter);
+  transition: opacity .6s ease, visibility .6s;
+}
+.preload.gone{ opacity: 0; visibility: hidden; }
+.pl{
+  font-family: var(--font-mono);
+  font-size: .75rem;
+  letter-spacing: .1em;
+  width: min(23rem, 100%);
+}
+.pl__t{ color: var(--text); letter-spacing: .22em; text-transform: uppercase; }
+.pl__rule{ height: 1px; background: var(--grid); margin: .85rem 0 1.1rem; }
+.chk{ display: flex; justify-content: space-between; color: var(--dim); padding-block: .22rem; }
+.chk b{ font-weight: 400; color: var(--grid-hi); letter-spacing: .16em; transition: color .25s ease; }
+.chk.ok b{ color: var(--pass); }
+.pl__bar{ height: 1px; background: var(--grid); margin: 1.2rem 0 .7rem; overflow: hidden; }
+.pl__bar i{ display: block; height: 100%; width: 0; background: var(--signal); }
+.pl__n{ display: flex; justify-content: space-between; color: var(--dim); letter-spacing: .18em; text-transform: uppercase; }
+.pl__n em{ font-style: normal; color: var(--signal); font-variant-numeric: tabular-nums; }
+.skip{
+  position: absolute; right: var(--gutter);
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  font-family: var(--font-mono); font-size: .625rem; letter-spacing: .18em;
+  text-transform: uppercase; color: var(--dim);
+  background: none; border: 0; cursor: pointer; padding: .5rem;
+}
+.skip:hover{ color: var(--signal); }
+.skip:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+
+/* ---------- Review panel ---------- */
+.rev{
+  position: absolute; z-index: 9;
+  right: var(--gutter);
+  bottom: calc(clamp(1.1rem, 3vh, 2rem) + env(safe-area-inset-bottom, 0px));
+  font-family: var(--font-mono); font-size: .625rem;
+  letter-spacing: .12em; text-transform: uppercase;
+  text-align: right;
+}
+.rev__toggle{
+  font: inherit; letter-spacing: inherit; text-transform: inherit;
+  color: var(--dim); background: rgba(10,13,16,.75); border: 1px solid var(--grid);
+  padding: .5rem .75rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: .5rem;
+}
+.rev__toggle:hover{ color: var(--signal); border-color: var(--grid-hi); }
+.rev__toggle:focus-visible{ outline: 2px solid var(--signal); outline-offset: 2px; }
+.fps{ color: var(--pass); font-variant-numeric: tabular-nums; }
+.rev__body{
+  margin-bottom: .5rem;
+  background: rgba(10,13,16,.9);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--grid);
+  padding: .3rem 0;
+  min-width: 13.5rem;
+  text-align: left;
+}
+.opt{
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  width: 100%; font: inherit; letter-spacing: inherit; text-transform: inherit;
+  background: none; border: 0; color: var(--muted);
+  padding: .5rem .85rem; cursor: pointer;
+}
+.opt:hover{ background: var(--panel); color: var(--text); }
+.opt:focus-visible{ outline: 2px solid var(--signal); outline-offset: -2px; }
+.opt i{ font-style: normal; color: var(--dim); }
+.opt[aria-pressed="true"] i{ color: var(--signal); }
+.rev__sep{ height: 1px; background: var(--grid); margin: .3rem 0; }
+@media (max-width: 620px){ .rev{ display: none; } }
+
+/* ---------- Cursor ---------- */
+.cur, .cur-ring{
+  position: fixed; top: 0; left: 0; z-index: 30; pointer-events: none;
+  border-radius: 50%; opacity: 0; transition: opacity .3s ease;
+}
+.cur{ width: 6px; height: 6px; background: var(--signal); margin: -3px 0 0 -3px; }
+.cur-ring{
+  width: 30px; height: 30px; border: 1px solid rgba(0,212,255,.45);
+  margin: -15px 0 0 -15px;
+  transition: opacity .3s ease, width .3s var(--ease), height .3s var(--ease),
+              margin .3s var(--ease), border-color .3s ease;
+}
+.is-ready .cur, .is-ready .cur-ring{ opacity: 1; }
+.cur-ring.big{
+  width: 54px; height: 54px; margin: -27px 0 0 -27px;
+  border-color: rgba(0,212,255,.85);
+}
+@media (pointer: coarse){ .cur, .cur-ring{ display: none; } }
+
+/* ---------- Note ---------- */
+.note{
+  position: absolute; z-index: 5;
+  left: var(--gutter);
+  top: 50%;
+  display: none;
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce){
+  .fx-grain{ animation: none; }
+  .dot{ animation: none; }
+  .cue__rail::after{ animation: none; transform: translateX(0); }
+  .bar{ transition: none; }
+  .is-open .rv, .is-open .line__in{ transition: none; }
+}
+.no-motion .fx-grain,
+.no-motion .dot,
+.no-motion .cue__rail::after{ animation: none !important; }
+.no-motion .cue__rail::after{ transform: translateX(0) !important; }
+</style>
+
+<div class="app eb-amber sub-serif" id="app">
+  <canvas id="gl" aria-hidden="true"></canvas>
+
+  <div class="fx-vignette" id="vig" aria-hidden="true"></div>
+  <div class="fx-grain" id="grain" aria-hidden="true"></div>
+
+  <div class="bar bar--t" aria-hidden="true"></div>
+  <div class="bar bar--b" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="lamps" aria-hidden="true">
+        <i class="lamp on"></i><i class="lamp on"></i><i class="lamp"></i>
+      </span>
+      <b>Parthiban.sys</b>
+    </div>
+    <div class="coords">
+      <span class="geo">13.0827&deg;N &middot; 80.2707&deg;E</span>
+      <span>IST <em class="clk" id="clk">--:--:--</em></span>
+    </div>
+  </header>
+
+  <main class="hero">
+    <div class="hero__inner">
+      <p class="eyebrow rv">
+        <span class="eyebrow__role">Senior QA Automation Engineer</span>
+        <span class="eyebrow__meta">SDET &middot; Chennai, India</span>
+      </p>
+
+      <h1>
+        <span class="line d1"><span class="line__in">I automate the testing.</span></span>
+        <span class="line d2"><span class="line__in">Lately, I automate</span></span>
+        <span class="line d3 line--soft"><span class="line__in">the tester.</span></span>
+      </h1>
+
+      <p class="sub rv">
+        Five years building Playwright, Selenium and WebdriverIO frameworks &mdash; and now
+        the agents that write them. I design <b>MCP-driven pipelines</b> that carry a Jira
+        ticket through test-case authoring, automation and review, and hand back a draft
+        pull request.
+      </p>
+
+      <div class="stats rv">
+        <div class="stat"><div class="stat__v">5+</div><div class="stat__l">Years &middot; SDET</div></div>
+        <div class="stat"><div class="stat__v">4</div><div class="stat__l">Languages</div></div>
+        <div class="stat"><div class="stat__v">~30m</div><div class="stat__l">Ticket &rarr; PR</div></div>
+        <div class="stat"><div class="stat__v">3</div><div class="stat__l">OSS tools</div></div>
+      </div>
+
+      <div class="actions rv">
+        <a class="btn btn--primary" href="#work"><span>View work &#9654;</span></a>
+        <a class="btn" href="#resume"><span>Resume &darr;</span></a>
+      </div>
+
+      <div class="chip rv"><i class="dot"></i> Open to senior SDET roles</div>
+    </div>
+  </main>
+
+  <div class="cue rv" aria-hidden="true">
+    <span>Scroll</span><span class="cue__rail"></span>
+  </div>
+
+  <div class="rev">
+    <div class="rev__body" id="revBody" hidden>
+      <button class="opt" type="button" id="oReplay">Replay intro <i>&#9654;</i></button>
+      <div class="rev__sep"></div>
+      <button class="opt" type="button" id="oEyebrow" aria-pressed="true">Eyebrow <i>amber</i></button>
+      <button class="opt" type="button" id="oSub">Sub-heading <i>serif</i></button>
+      <div class="rev__sep"></div>
+      <button class="opt" type="button" id="oGrain" aria-pressed="true">Film grain <i>on</i></button>
+      <button class="opt" type="button" id="oVig" aria-pressed="true">Vignette <i>on</i></button>
+      <button class="opt" type="button" id="oCine" aria-pressed="false">Letterbox 2.39:1 <i>off</i></button>
+      <div class="rev__sep"></div>
+      <button class="opt" type="button" id="oDens" aria-pressed="true">Field density <i>high</i></button>
+      <button class="opt" type="button" id="oMotion" aria-pressed="false">Reduce motion <i>off</i></button>
+    </div>
+    <button class="rev__toggle" type="button" id="revToggle" aria-expanded="false" aria-controls="revBody">
+      Review <span class="fps" id="fps">--</span>
+    </button>
+  </div>
+
+  <div class="preload" id="preload">
+    <div class="pl">
+      <div class="pl__t">Parthiban.sys</div>
+      <div class="pl__rule"></div>
+      <div class="chk" data-chk><span>&#9656; shaders</span><b>....</b></div>
+      <div class="chk" data-chk><span>&#9656; geometry</span><b>....</b></div>
+      <div class="chk" data-chk><span>&#9656; fonts</span><b>....</b></div>
+      <div class="chk" data-chk><span>&#9656; telemetry</span><b>....</b></div>
+      <div class="pl__bar"><i id="plBar"></i></div>
+      <div class="pl__n"><span>Initialising</span><em id="plNum">000</em></div>
+    </div>
+    <button class="skip" type="button" id="skip">Skip &#9654;</button>
+  </div>
+
+  <div class="cur" id="cur" aria-hidden="true"></div>
+  <div class="cur-ring" id="curRing" aria-hidden="true"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three/r128/three.min.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var app      = document.getElementById('app');
+  var preload  = document.getElementById('preload');
+  var plBar    = document.getElementById('plBar');
+  var plNum    = document.getElementById('plNum');
+  var checks   = document.querySelectorAll('[data-chk]');
+  var canvas   = document.getElementById('gl');
+
+  var prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var isCoarse = window.matchMedia('(pointer: coarse)').matches;
+  var isSmall  = window.innerWidth < 768;
+  var lowPower = isCoarse || isSmall || (navigator.hardwareConcurrency || 8) <= 4;
+
+  var reduceMotion = prefersReduced;   // can also be toggled from the review panel
+
+  /* =========================================================
+     1. THE NODE FIELD
+     Slabs on a treadmill: each slab is a self-contained chunk
+     of nodes + edges. When one drifts past the camera it is
+     recycled to the back of the queue — which happens behind
+     the lens, so the field reads as infinite and never repeats.
+     ========================================================= */
+
+  var VERT = [
+    'attribute float aSize;',
+    'attribute vec3 aColor;',
+    'varying vec3 vColor;',
+    'varying float vFade;',
+    'void main() {',
+    '  vColor = aColor;',
+    '  vec4 mv = modelViewMatrix * vec4(position, 1.0);',
+    '  float d = -mv.z;',
+    '  gl_PointSize = aSize * (440.0 / max(d, 1.0));',
+    '  vFade = smoothstep(360.0, 40.0, d) * smoothstep(3.0, 18.0, d);',
+    '  gl_Position = projectionMatrix * mv;',
+    '}'
+  ].join('\n');
+
+  var FRAG = [
+    'precision mediump float;',
+    'varying vec3 vColor;',
+    'varying float vFade;',
+    'void main() {',
+    '  float d = length(gl_PointCoord - vec2(0.5));',
+    '  if (d > 0.5) discard;',
+    '  float core = 1.0 - smoothstep(0.0, 0.5, d);',
+    '  gl_FragColor = vec4(vColor, pow(core, 2.2) * vFade);',
+    '}'
+  ].join('\n');
+
+  var SLAB_DEPTH = 64;
+  var SLAB_COUNT = 5;
+  var FIELD_W = 78, FIELD_H = 48;
+
+  var scene, camera, renderer, slabs = [], running = false, glOK = true;
+  var density = lowPower ? 'med' : 'high';
+  var DENSITY = { low: 52, med: 88, high: 140 };
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function buildSlab(count) {
+    var g = new THREE.Group();
+
+    var pos = new Float32Array(count * 3);
+    var col = new Float32Array(count * 3);
+    var siz = new Float32Array(count);
+    var baseCol = new Float32Array(count * 3);
+    var baseSiz = new Float32Array(count);
+    var pts = [];
+
+    for (var i = 0; i < count; i++) {
+      var x = rand(-FIELD_W / 2, FIELD_W / 2);
+      var y = rand(-FIELD_H / 2, FIELD_H / 2);
+      var z = -Math.random() * SLAB_DEPTH;
+      pos[i * 3] = x; pos[i * 3 + 1] = y; pos[i * 3 + 2] = z;
+      pts.push([x, y, z]);
+
+      // A few hubs read brighter and cyan; the rest are quiet slate.
+      var hub = Math.random() < 0.06;
+      var r, gg, b, s;
+      if (hub) { r = 0.05; gg = 0.62; b = 0.80; s = rand(3.4, 4.6); }
+      else {
+        var t = Math.random();
+        r = 0.16 + t * 0.06; gg = 0.26 + t * 0.14; b = 0.32 + t * 0.20;
+        s = rand(1.3, 2.4);
+      }
+      col[i * 3] = baseCol[i * 3] = r;
+      col[i * 3 + 1] = baseCol[i * 3 + 1] = gg;
+      col[i * 3 + 2] = baseCol[i * 3 + 2] = b;
+      siz[i] = baseSiz[i] = s;
+    }
+
+    var pg = new THREE.BufferGeometry();
+    pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    pg.setAttribute('aColor', new THREE.BufferAttribute(col, 3));
+    pg.setAttribute('aSize', new THREE.BufferAttribute(siz, 1));
+
+    var pm = new THREE.ShaderMaterial({
+      vertexShader: VERT, fragmentShader: FRAG,
+      transparent: true, depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    g.add(new THREE.Points(pg, pm));
+
+    // --- edges: nearest-neighbour, capped so the field stays legible
+    var linePos = [], lineCol = [], deg = new Array(count).fill(0);
+    var pairs = [];
+    var R = 17;
+    for (var a = 0; a < count; a++) {
+      if (deg[a] >= 3) continue;
+      for (var b2 = a + 1; b2 < count; b2++) {
+        if (deg[a] >= 3 || deg[b2] >= 3) continue;
+        var dx = pts[a][0] - pts[b2][0], dy = pts[a][1] - pts[b2][1], dz = pts[a][2] - pts[b2][2];
+        if (dx * dx + dy * dy + dz * dz < R * R) {
+          deg[a]++; deg[b2]++;
+          pairs.push([a, b2]);
+          var c = rand(0.055, 0.13);
+          linePos.push(pts[a][0], pts[a][1], pts[a][2], pts[b2][0], pts[b2][1], pts[b2][2]);
+          lineCol.push(c * 0.1, c * 0.75, c, c * 0.1, c * 0.75, c);
+        }
+      }
+    }
+
+    if (pairs.length) {
+      var lg = new THREE.BufferGeometry();
+      lg.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
+      lg.setAttribute('color', new THREE.Float32BufferAttribute(lineCol, 3));
+      g.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({
+        vertexColors: true, transparent: true, fog: true,
+        blending: THREE.AdditiveBlending, depthWrite: false
+      })));
+    }
+
+    // --- travellers: packets moving along edges, the "pipeline" read
+    var tN = pairs.length ? (lowPower ? 3 : 6) : 0;
+    var tGeo = null, travellers = [];
+    if (tN) {
+      var tp = new Float32Array(tN * 3);
+      var tc = new Float32Array(tN * 3);
+      var ts = new Float32Array(tN);
+      for (var k = 0; k < tN; k++) {
+        travellers.push({ e: (Math.random() * pairs.length) | 0, t: Math.random(), v: rand(0.18, 0.42) });
+        tc[k * 3] = 0.1; tc[k * 3 + 1] = 0.85; tc[k * 3 + 2] = 1.0;
+        ts[k] = 2.8;
+      }
+      tGeo = new THREE.BufferGeometry();
+      tGeo.setAttribute('position', new THREE.BufferAttribute(tp, 3));
+      tGeo.setAttribute('aColor', new THREE.BufferAttribute(tc, 3));
+      tGeo.setAttribute('aSize', new THREE.BufferAttribute(ts, 1));
+      g.add(new THREE.Points(tGeo, pm.clone()));
+    }
+
+    g.userData = {
+      count: count, pts: pts, pairs: pairs,
+      colAttr: pg.attributes.aColor, sizAttr: pg.attributes.aSize,
+      baseCol: baseCol, baseSiz: baseSiz,
+      pulses: [], travellers: travellers, tGeo: tGeo
+    };
+    return g;
+  }
+
+  var PASS = [0.24, 0.86, 0.59];
+  var FAIL = [1.00, 0.36, 0.36];
+
+  function tickSlab(g, dt) {
+    var d = g.userData;
+
+    // spawn the occasional pass/fail resolution
+    if (!reduceMotion && d.pulses.length < 4 && Math.random() < dt * 1.1) {
+      d.pulses.push({
+        i: (Math.random() * d.count) | 0,
+        t: 0,
+        dur: rand(1.1, 2.0),
+        c: Math.random() < 0.78 ? PASS : FAIL
+      });
+    }
+
+    if (d.pulses.length) {
+      var col = d.colAttr.array, siz = d.sizAttr.array;
+      for (var p = d.pulses.length - 1; p >= 0; p--) {
+        var pu = d.pulses[p];
+        pu.t += dt;
+        var n = pu.t / pu.dur;
+        var i3 = pu.i * 3;
+        if (n >= 1) {
+          col[i3] = d.baseCol[i3]; col[i3 + 1] = d.baseCol[i3 + 1]; col[i3 + 2] = d.baseCol[i3 + 2];
+          siz[pu.i] = d.baseSiz[pu.i];
+          d.pulses.splice(p, 1);
+        } else {
+          var e = Math.sin(n * Math.PI); // up then back down
+          col[i3]     = d.baseCol[i3]     + (pu.c[0] - d.baseCol[i3])     * e;
+          col[i3 + 1] = d.baseCol[i3 + 1] + (pu.c[1] - d.baseCol[i3 + 1]) * e;
+          col[i3 + 2] = d.baseCol[i3 + 2] + (pu.c[2] - d.baseCol[i3 + 2]) * e;
+          siz[pu.i]   = d.baseSiz[pu.i] + (7.5 - d.baseSiz[pu.i]) * e;
+        }
+      }
+      d.colAttr.needsUpdate = true;
+      d.sizAttr.needsUpdate = true;
+    }
+
+    if (d.tGeo && !reduceMotion) {
+      var tp = d.tGeo.attributes.position.array;
+      for (var k = 0; k < d.travellers.length; k++) {
+        var tr = d.travellers[k];
+        tr.t += tr.v * dt;
+        if (tr.t > 1) { tr.t = 0; tr.e = (Math.random() * d.pairs.length) | 0; tr.v = rand(0.18, 0.42); }
+        var pr = d.pairs[tr.e];
+        var A = d.pts[pr[0]], B = d.pts[pr[1]];
+        tp[k * 3]     = A[0] + (B[0] - A[0]) * tr.t;
+        tp[k * 3 + 1] = A[1] + (B[1] - A[1]) * tr.t;
+        tp[k * 3 + 2] = A[2] + (B[2] - A[2]) * tr.t;
+      }
+      d.tGeo.attributes.position.needsUpdate = true;
+    }
+  }
+
+  function initGL() {
+    if (typeof THREE === 'undefined') return false;
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: !lowPower, alpha: false });
+    } catch (err) { return false; }
+    if (!renderer.getContext()) return false;
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, lowPower ? 1.5 : 1.75));
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+    renderer.setClearColor(0x050607, 1);
+
+    scene = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x050607, 0.0082);
+
+    camera = new THREE.PerspectiveCamera(66, window.innerWidth / window.innerHeight, 0.1, 500);
+    camera.position.set(0, 0, 70);
+
+    for (var i = 0; i < SLAB_COUNT; i++) {
+      var s = buildSlab(DENSITY[density]);
+      s.position.z = -i * SLAB_DEPTH;
+      scene.add(s);
+      slabs.push(s);
+    }
+    return true;
+  }
+
+  function rebuildField() {
+    for (var i = 0; i < slabs.length; i++) scene.remove(slabs[i]);
+    slabs = [];
+    for (var j = 0; j < SLAB_COUNT; j++) {
+      var s = buildSlab(DENSITY[density]);
+      s.position.z = -j * SLAB_DEPTH;
+      scene.add(s);
+      slabs.push(s);
+    }
+  }
+
+  /* =========================================================
+     2. CAMERA — a slow push-in, then a permanent forward drift
+     ========================================================= */
+
+  var mx = 0, my = 0, cx = 0, cy = 0;
+  var camZ = 70, camTargetZ = 40, fov = 66, fovTarget = 55;
+  var introT = 0, introDur = 2.8, introActive = false;
+
+  function easeOutExpo(t) { return t >= 1 ? 1 : 1 - Math.pow(2, -10 * t); }
+
+  var last = 0, frames = 0, fpsAcc = 0;
+  var fpsEl = document.getElementById('fps');
+
+  function frame(now) {
+    if (!running) return;
+    requestAnimationFrame(frame);
+
+    var dt = last ? Math.min((now - last) / 1000, 0.05) : 0.016;
+    last = now;
+
+    // fps readout
+    frames++; fpsAcc += dt;
+    if (fpsAcc >= 1) {
+      var v = Math.round(frames / fpsAcc);
+      fpsEl.textContent = v;
+      fpsEl.style.color = v >= 50 ? 'var(--pass)' : (v >= 30 ? 'var(--warn)' : 'var(--fail)');
+      frames = 0; fpsAcc = 0;
+    }
+
+    if (introActive) {
+      introT += dt;
+      var e = easeOutExpo(Math.min(introT / introDur, 1));
+      camZ = 70 + (camTargetZ - 70) * e;
+      fov = 66 + (fovTarget - 66) * e;
+      camera.fov = fov;
+      camera.updateProjectionMatrix();
+      if (introT >= introDur) introActive = false;
+    }
+
+    // treadmill
+    var speed = reduceMotion ? 0 : 4.4;
+    for (var i = 0; i < slabs.length; i++) {
+      var s = slabs[i];
+      s.position.z += speed * dt;
+      if (s.position.z > camZ + 22) s.position.z -= SLAB_DEPTH * SLAB_COUNT;
+      tickSlab(s, dt);
+    }
+
+    // parallax
+    var lerp = reduceMotion ? 1 : 1 - Math.pow(0.001, dt);
+    cx += (mx * 4.5 - cx) * lerp;
+    cy += (my * 2.6 - cy) * lerp;
+    camera.position.set(cx, cy, camZ);
+    camera.lookAt(cx * 0.35, cy * 0.35, camZ - 60);
+
+    renderer.render(scene, camera);
+  }
+
+  function onResize() {
+    if (!glOK) return;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight, false);
+  }
+
+  /* =========================================================
+     3. SEQUENCE
+     ========================================================= */
+
+  function openScene() {
+    preload.classList.add('gone');
+    app.classList.add('is-open');
+    document.body.classList.add('is-ready');
+    if (glOK && !reduceMotion) { introT = 0; introActive = true; }
+    else if (glOK) { camZ = camTargetZ; camera.fov = fovTarget; camera.updateProjectionMatrix(); }
+  }
+
+  var plDone = false;
+  function runPreloader() {
+    if (reduceMotion || document.hidden) {
+      plNum.textContent = '100';
+      for (var c = 0; c < checks.length; c++) {
+        checks[c].classList.add('ok');
+        checks[c].querySelector('b').textContent = 'PASS';
+      }
+      plDone = true;
+      openScene();
+      return;
+    }
+
+    var t0 = performance.now(), DUR = 1500;
+    (function step(now) {
+      var n = Math.min((now - t0) / DUR, 1);
+      var val = Math.round(n * 100);
+      plNum.textContent = ('00' + val).slice(-3);
+      plBar.style.width = val + '%';
+      for (var c = 0; c < checks.length; c++) {
+        if (val >= 22 + c * 20 && !checks[c].classList.contains('ok')) {
+          checks[c].classList.add('ok');
+          checks[c].querySelector('b').textContent = 'PASS';
+        }
+      }
+      if (n < 1) requestAnimationFrame(step);
+      else if (!plDone) { plDone = true; setTimeout(openScene, 220); }
+    })(t0);
+  }
+
+  document.getElementById('skip').addEventListener('click', function () {
+    if (plDone) return;
+    plDone = true;
+    plNum.textContent = '100';
+    plBar.style.width = '100%';
+    for (var c = 0; c < checks.length; c++) {
+      checks[c].classList.add('ok');
+      checks[c].querySelector('b').textContent = 'PASS';
+    }
+    openScene();
+  });
+
+  /* =========================================================
+     4. CHROME — clock, cursor, review panel
+     ========================================================= */
+
+  var clk = document.getElementById('clk');
+  function tickClock() {
+    try {
+      clk.textContent = new Date().toLocaleTimeString('en-GB', {
+        timeZone: 'Asia/Kolkata', hour12: false
+      });
+    } catch (e) {
+      clk.textContent = new Date().toTimeString().slice(0, 8);
+    }
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  if (!isCoarse) {
+    var cur = document.getElementById('cur');
+    var ring = document.getElementById('curRing');
+    var rx = 0, ry = 0, tx = 0, ty = 0;
+    window.addEventListener('mousemove', function (e) {
+      tx = e.clientX; ty = e.clientY;
+      cur.style.transform = 'translate(' + tx + 'px,' + ty + 'px)';
+      mx = (e.clientX / window.innerWidth) * 2 - 1;
+      my = -((e.clientY / window.innerHeight) * 2 - 1);
+    });
+    (function ringLoop() {
+      rx += (tx - rx) * 0.16; ry += (ty - ry) * 0.16;
+      ring.style.transform = 'translate(' + rx + 'px,' + ry + 'px)';
+      requestAnimationFrame(ringLoop);
+    })();
+    var hot = document.querySelectorAll('a, button');
+    for (var h = 0; h < hot.length; h++) {
+      hot[h].addEventListener('mouseenter', function () { ring.classList.add('big'); });
+      hot[h].addEventListener('mouseleave', function () { ring.classList.remove('big'); });
+    }
+  }
+
+  var revToggle = document.getElementById('revToggle');
+  var revBody = document.getElementById('revBody');
+  revToggle.addEventListener('click', function () {
+    var open = revBody.hidden;
+    revBody.hidden = !open;
+    revToggle.setAttribute('aria-expanded', String(open));
+  });
+
+  function bindToggle(id, initial, onChange, labels) {
+    var el = document.getElementById(id);
+    var on = initial;
+    el.addEventListener('click', function () {
+      on = !on;
+      el.setAttribute('aria-pressed', String(on));
+      el.querySelector('i').textContent = on ? labels[0] : labels[1];
+      onChange(on);
+    });
+  }
+
+  bindToggle('oEyebrow', true, function (on) {
+    app.classList.toggle('eb-amber', on);
+  }, ['amber', 'neutral']);
+
+  bindToggle('oGrain', true, function (on) {
+    document.getElementById('grain').classList.toggle('fx-off', !on);
+  }, ['on', 'off']);
+
+  bindToggle('oVig', true, function (on) {
+    document.getElementById('vig').classList.toggle('fx-off', !on);
+  }, ['on', 'off']);
+
+  bindToggle('oCine', false, function (on) {
+    app.classList.toggle('is-cine', on);
+  }, ['on', 'off']);
+
+  bindToggle('oMotion', false, function (on) {
+    reduceMotion = on || prefersReduced;
+    document.body.classList.toggle('no-motion', reduceMotion);
+  }, ['on', 'off']);
+
+  var subEl = document.getElementById('oSub');
+  var subOrder = ['serif', 'mono', 'sans'];
+  var subMode = 'serif';
+  subEl.querySelector('i').textContent = subMode;
+  subEl.addEventListener('click', function () {
+    app.classList.remove('sub-' + subMode);
+    subMode = subOrder[(subOrder.indexOf(subMode) + 1) % subOrder.length];
+    app.classList.add('sub-' + subMode);
+    subEl.querySelector('i').textContent = subMode;
+  });
+
+  var densEl = document.getElementById('oDens');
+  var order = ['low', 'med', 'high'];
+  densEl.querySelector('i').textContent = density;
+  densEl.addEventListener('click', function () {
+    density = order[(order.indexOf(density) + 1) % 3];
+    densEl.querySelector('i').textContent = density;
+    if (glOK) rebuildField();
+  });
+
+  document.getElementById('oReplay').addEventListener('click', function () {
+    app.classList.remove('is-open');
+    preload.classList.remove('gone');
+    plDone = false;
+    plBar.style.width = '0%';
+    plNum.textContent = '000';
+    for (var c = 0; c < checks.length; c++) {
+      checks[c].classList.remove('ok');
+      checks[c].querySelector('b').textContent = '....';
+    }
+    setTimeout(runPreloader, 420);
+  });
+
+  /* =========================================================
+     5. FILM GRAIN — generated once, tiled, stepped
+     ========================================================= */
+
+  (function makeGrain() {
+    var s = 128;
+    var c = document.createElement('canvas');
+    c.width = c.height = s;
+    var ctx = c.getContext('2d');
+    var img = ctx.createImageData(s, s);
+    for (var i = 0; i < img.data.length; i += 4) {
+      var v = (Math.random() * 255) | 0;
+      img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+      img.data[i + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    document.getElementById('grain').style.backgroundImage = 'url(' + c.toDataURL() + ')';
+  })();
+
+  /* =========================================================
+     6. BOOT
+     ========================================================= */
+
+  glOK = initGL();
+  if (!glOK) {
+    canvas.hidden = true;
+    var fb = document.createElement('div');
+    fb.className = 'glfallback';
+    app.insertBefore(fb, app.firstChild);
+  } else {
+    running = true;
+    requestAnimationFrame(frame);
+    window.addEventListener('resize', onResize);
+  }
+
+  if (reduceMotion) document.body.classList.add('no-motion');
+  runPreloader();
+})();
+</script>
